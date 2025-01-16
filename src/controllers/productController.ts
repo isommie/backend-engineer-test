@@ -24,7 +24,7 @@ export const getProductById = async (req: Request, res: Response) => {
     }
     res.status(200).json({ success: true, data: product });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to fetch product' });
+    res.status(500).json({ success: false, message: 'Failed to fetch a product' });
   }
 };
 
@@ -33,12 +33,12 @@ export const getProductById = async (req: Request, res: Response) => {
  */
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, price, description, category } = req.body;
-    const product = new Product({ name, price, description, category });
+    const { name, price, description, category, stock } = req.body;
+    const product = new Product({ name, price, description, category, stock });
     await product.save();
     res.status(201).json({ success: true, data: product });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to create product' });
+    res.status(500).json({ success: false, message: 'Failed to create a product' });
   }
 };
 
@@ -47,10 +47,10 @@ export const createProduct = async (req: Request, res: Response) => {
  */
 export const updateProduct = async (req: Request, res: Response) => {
   try {
-    const { name, price, description, category } = req.body;
+    const { name, price, description, category, stock } = req.body;
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      { name, price, description, category },
+      { name, price, description, category, stock },
       { new: true, runValidators: true }
     );
     if (!product) {
@@ -58,7 +58,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
     res.status(200).json({ success: true, data: product });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update product' });
+    res.status(500).json({ success: false, message: 'Failed to update a product' });
   }
 };
 
@@ -73,6 +73,6 @@ export const deleteProduct = async (req: Request, res: Response) => {
     }
     res.status(200).json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to delete product' });
+    res.status(500).json({ success: false, message: 'Failed to delete the product' });
   }
 };
