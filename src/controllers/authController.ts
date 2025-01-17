@@ -1,110 +1,139 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { hashHelper } from '../utils/hashHelper';
+import { jwtHelper } from '../utils/jwtHelper';
 
 /**
- * Register a new user
+ * Handle user registration
  */
 export const registerUser = async (req: Request, res: Response): Promise<Response> => {
   try {
+    // Extract email, password, and username from the request body
     const { email, password, username } = req.body;
 
+    // Check if the email already exists in the database
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      // Return an error if the email is already registered
       return res.status(400).json({ success: false, message: 'Email is already registered' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash the user's password using hashHelper
+    const hashedPassword = await hashHelper.hashPassword(password);
     const user = new User({ email, password: hashedPassword, username });
+    // Save the new user to the database
     await user.save();
 
+    // Return a success response with the new user's data
     return res.status(201).json({ success: true, data: user });
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    // Log the error for debugging
+    console.error(error);
+    // Return an error response with a 500 status code
     return res.status(500).json({ success: false, message: 'Failed to register user' });
   }
 };
 
 /**
- * Login user
+ * Handle user login
  */
 export const loginUser = async (req: Request, res: Response): Promise<Response> => {
   try {
+    // Extract email and password from the request body
     const { email, password } = req.body;
 
+    // Find the user with the provided email
     const user = await User.findOne({ email });
     if (!user) {
+      // Return an error if the user does not exist
       return res.status(404).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Compare the provided password with the stored hashed password using hashHelper
+    const isMatch = await hashHelper.comparePassword(password, user.password);
     if (!isMatch) {
+      // Return an error if the passwords do not match
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
-      expiresIn: '1d',
-    });
-
+    // Generate a JSON Web Token (JWT) with the user's ID
+    const token = jwtHelper.signToken({ id: user._id });
+    // Return a success response with the JWT
     return res.status(200).json({ success: true, token });
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    // Log the error for debugging
+    console.error(error);
+    // Return an error response with a 500 status code
     return res.status(500).json({ success: false, message: 'Failed to login' });
   }
 };
 
 /**
- * Get user details (protected route)
+ * Get user details (protected route, requires valid JWT)
  */
 export const getUserDetails = async (req: Request, res: Response): Promise<Response> => {
   try {
+    // Find the user with the ID from the JWT
     const user = await User.findById(req.user?.id).select('-password');
     if (!user) {
+      // Return an error if the user does not exist
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+    // Return the user's details with the password omitted
     return res.status(200).json({ success: true, data: user });
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    // Log the error for debugging
+    console.error(error);
+    // Return an error response with a 500 status code
     return res.status(500).json({ success: false, message: 'Failed to get user details' });
   }
 };
 
 /**
- * Update user details
+ * Update user details (protected route, requires valid JWT)
  */
 export const updateUser = async (req: Request, res: Response): Promise<Response> => {
   try {
+    // Extract username and email from the request body
     const { username, email } = req.body;
+    // Update the user's details with the provided data
     const user = await User.findByIdAndUpdate(
       req.user?.id,
       { username, email },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true } // Run validation on the updated data
     );
 
     if (!user) {
+      // Return an error if the user does not exist
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-
+    // Return the updated user's data
     return res.status(200).json({ success: true, data: user });
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    // Log the error for debugging
+    console.error(error);
+    // Return an error response with a 500 status code
     return res.status(500).json({ success: false, message: 'Failed to update user' });
   }
 };
 
 /**
- * Delete user account
+ * Delete user account (protected route, requires valid JWT)
  */
 export const deleteUser = async (req: Request, res: Response): Promise<Response> => {
   try {
+    // Delete the user with the ID from the JWT
     const user = await User.findByIdAndDelete(req.user?.id);
     if (!user) {
+      // Return an error if the user does not exist
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+    // Return a success response with a deletion message
     return res.status(200).json({ success: true, message: 'User account deleted successfully' });
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    // Log the error for debugging
+    console.error(error);
+    // Return an error response with a 500 status code
     return res.status(500).json({ success: false, message: 'Failed to delete user' });
   }
 };
