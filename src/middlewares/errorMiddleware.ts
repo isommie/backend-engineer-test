@@ -11,7 +11,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  // Log the error details; this helps for debugging and tracking purposes
+  // Log the error details;
   console.error(err.stack);
 
   // Provide a standard HTTP 500 Internal Server Error response
@@ -20,3 +20,8 @@ export const errorHandler = (
     error: process.env.NODE_ENV === 'production' ? undefined : err.message, // Include error details in non-production environments
   });
 };
+
+// 404 Not Found Middleware
+export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
+    res.status(404).json({ success: false, message: 'Route not found' });
+  };

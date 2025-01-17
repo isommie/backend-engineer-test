@@ -6,6 +6,7 @@ import {
   getUserDetails,
   updateUser,
   deleteUser,
+  logoutUser,
 } from '../controllers/authController';
 
 const router: Router = Router();
@@ -53,6 +54,15 @@ router.put('/update', authenticateToken, (req, res, next) => {
  */
 router.delete('/delete', authenticateToken, (req, res, next) => {
     deleteUser(req, res);
+});
+
+/**
+ * DELETE /api/auth/logout
+ * 
+ * Description: Logout the current authenticated user's account
+ */
+router.post('/logout', (req, res, next) => {
+    logoutUser(req, res);
 });
 
 export default router;

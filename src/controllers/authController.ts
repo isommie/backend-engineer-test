@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { User } from '../models/User';
 import { hashHelper } from '../utils/hashHelper';
 import { jwtHelper } from '../utils/jwtHelper';
+import { Token } from '../models/Token';
 
 /**
  * Handle user registration
@@ -135,5 +136,21 @@ export const deleteUser = async (req: Request, res: Response): Promise<Response>
     console.error(error);
     // Return an error response with a 500 status code
     return res.status(500).json({ success: false, message: 'Failed to delete user' });
+  }
+};
+
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Token not provided' });
+    }
+
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await Token.create({ token, expiresAt });
+
+    res.status(200).json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to log out' });
   }
 };
