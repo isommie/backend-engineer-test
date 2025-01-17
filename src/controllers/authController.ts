@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 /**
  * Register a new user
  */
-export const registerUser = async (req: Request, res: Response) => {
+export const registerUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { email, password, username } = req.body;
 
@@ -19,16 +19,17 @@ export const registerUser = async (req: Request, res: Response) => {
     const user = new User({ email, password: hashedPassword, username });
     await user.save();
 
-    res.status(201).json({ success: true, data: user });
+    return res.status(201).json({ success: true, data: user });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to register user' });
+    console.error(error); // Log the error for debugging
+    return res.status(500).json({ success: false, message: 'Failed to register user' });
   }
 };
 
 /**
  * Login user
  */
-export const loginUser = async (req: Request, res: Response) => {
+export const loginUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { email, password } = req.body;
 
@@ -46,31 +47,33 @@ export const loginUser = async (req: Request, res: Response) => {
       expiresIn: '1d',
     });
 
-    res.status(200).json({ success: true, token });
+    return res.status(200).json({ success: true, token });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to login' });
+    console.error(error); // Log the error for debugging
+    return res.status(500).json({ success: false, message: 'Failed to login' });
   }
 };
 
 /**
  * Get user details (protected route)
  */
-export const getUserDetails = async (req: Request, res: Response) => {
+export const getUserDetails = async (req: Request, res: Response): Promise<Response> => {
   try {
     const user = await User.findById(req.user?.id).select('-password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.status(200).json({ success: true, data: user });
+    return res.status(200).json({ success: true, data: user });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to get user details' });
+    console.error(error); // Log the error for debugging
+    return res.status(500).json({ success: false, message: 'Failed to get user details' });
   }
 };
 
 /**
  * Update user details
  */
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { username, email } = req.body;
     const user = await User.findByIdAndUpdate(
@@ -83,23 +86,25 @@ export const updateUser = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    res.status(200).json({ success: true, data: user });
+    return res.status(200).json({ success: true, data: user });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update user' });
+    console.error(error); // Log the error for debugging
+    return res.status(500).json({ success: false, message: 'Failed to update user' });
   }
 };
 
 /**
  * Delete user account
  */
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const user = await User.findByIdAndDelete(req.user?.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.status(200).json({ success: true, message: 'User account deleted successfully' });
+    return res.status(200).json({ success: true, message: 'User account deleted successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to delete user' });
+    console.error(error); // Log the error for debugging
+    return res.status(500).json({ success: false, message: 'Failed to delete user' });
   }
 };
