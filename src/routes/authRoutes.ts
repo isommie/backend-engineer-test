@@ -52,7 +52,7 @@ router.put('/update', authenticateToken, (req, res, next) => {
  * Protected
  * Description: Delete the authenticated user's account
  */
-router.delete('/delete', authenticateToken, (req, res, next) => {
+router.delete('/delete/:id', authenticateToken, (req, res, next) => {
     deleteUser(req, res);
 });
 

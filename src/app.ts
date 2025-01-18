@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import connectDB from './config/database';
 import { authenticateToken } from './middlewares/authMiddleware';
 import authRoutes from './routes/authRoutes';
-import productRoutes from './routes/productRoutes'; // Assuming a product route exists
+import productRoutes from './routes/productRoutes';
 import { errorHandler, notFoundHandler } from './middlewares/errorMiddleware';
 
 // Initialize environment variables

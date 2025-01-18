@@ -110,6 +110,22 @@ src
 │   └── productRoutes.ts  # Product-related routes
 ├── utils
 │   └── validation.ts     # Input validation utilities
+├── tests/
+│   ├── controllers/
+│   │   ├── authController.test.ts
+│   │   └── productController.test.ts
+│   ├── middlewares/
+│   │   ├── authMiddleware.test.ts
+│   │   └── errorMiddleware.test.ts
+│   ├── models/
+│   │   ├── Token.test.ts
+│   │   └── User.test.ts
+│   ├── routes/
+│   │   ├── authRoutes.test.ts
+│   │   └── productRoutes.test.ts
+│   └── config/
+│       └── database.test.ts
+├── jest.config.js
 ├── app.ts                # Main application setup
 └── server.ts             # Server entry point
 ```
@@ -135,4 +151,4 @@ This project is licensed under the MIT License.
 
 ---
 
-Thank you for reviewing this project. If you have any questions, please contact [aanajembaedwin@gmail.com].
+Thank you for reviewing this project. If you have any questions, please contact [anajembaedwin@gmail.com].

@@ -59,6 +59,7 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
 
     // Generate a JSON Web Token (JWT) with the user's ID
     const token = jwtHelper.signToken({ id: user._id });
+
     // Return a success response with the JWT
     return res.status(200).json({ success: true, token });
   } catch (error) {
