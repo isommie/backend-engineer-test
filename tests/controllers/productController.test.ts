@@ -1,230 +1,211 @@
-import { Request, Response } from "express";
-import {
-  getAllProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "../../src/controllers/productController";
-import { Product } from "../../src/models/Product";
-import { logger } from "../../src/utils/logger";
+import request from 'supertest';
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import app from '../../src/app';
+import { Product } from '../../src/models/Product';
+import { User } from '../../src/models/User';
+import { hashHelper } from '../../src/utils/hashHelper';
 
-jest.mock("../../src/models/Product", () => ({
-    Product: {
-      create: jest.fn(), // Mock the static create method
-      findByIdAndUpdate: jest.fn(), // Mock the static findByIdAndUpdate method for updateProduct
-      findByIdAndDelete: jest.fn(), // Mock the static findByIdAndDelete method for deleteProduct
-      find: jest.fn(), // Mock the static find method for getAllProducts
-      findById: jest.fn(), // Mock the static findById method for getProductById
-    },
-  }));
-  
-jest.mock("../../src/utils/logger");
+let mongoServer: MongoMemoryServer;
+let authToken: string;
 
-describe("Product Controller", () => {
-  let mockReq: Partial<Request>;
-  let mockRes: Partial<Response>;
-  let statusMock: jest.Mock;
-  let jsonMock: jest.Mock;
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
 
-  beforeEach(() => {
-    jsonMock = jest.fn();
-    statusMock = jest.fn().mockReturnValue({ json: jsonMock });
-    mockReq = { body: {}, params: {} };
-    mockRes = { status: statusMock, json: jsonMock };
-    jest.clearAllMocks();
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(uri, {});
+  }
+
+  const registerResponse = await request(app).post('/api/auth/register').send({
+    username: 'Test User',
+    email: 'test@example.com',
+    password: 'password123',
   });
 
-  describe("getAllProducts", () => {
-    it("should return all products", async () => {
-      const products = [{ id: "1", name: "Product A" }, { id: "2", name: "Product B" }];
-      (Product.find as jest.Mock).mockResolvedValue(products);
-
-      await getAllProducts(mockReq as Request, mockRes as Response);
-
-      expect(Product.find).toHaveBeenCalled();
-      expect(logger.log).toHaveBeenCalledWith("Fetching all products");
-      expect(logger.log).toHaveBeenCalledWith("Fetched 2 products");
-      expect(statusMock).toHaveBeenCalledWith(200);
-      expect(jsonMock).toHaveBeenCalledWith({ success: true, data: products });
+  if (registerResponse.status === 201) {
+    const loginResponse = await request(app).post('/api/auth/login').send({
+      email: 'test@example.com',
+      password: 'password123',
     });
 
-    it("should handle errors", async () => {
-      (Product.find as jest.Mock).mockRejectedValue(new Error("Error fetching products"));
+    if (loginResponse.body && loginResponse.body.token) {
+      authToken = loginResponse.body.token;
+    } else {
+      throw new Error('Auth token not found in login response');
+    }
+  } else {
+    throw new Error('User registration failed');
+  }
+});
 
-      await getAllProducts(mockReq as Request, mockRes as Response);
+afterEach(async () => {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
+  }
+});
 
-      expect(logger.error).toHaveBeenCalledWith("Failed to fetch products");
-      expect(statusMock).toHaveBeenCalledWith(500);
-      expect(jsonMock).toHaveBeenCalledWith({
-        success: false,
-        message: "Failed to fetch products",
-      });
-    });
-  });
+afterAll(async () => {
+  await mongoose.connection.dropDatabase();
+  await mongoose.connection.close();
+  await mongoServer.stop();
+});
 
-  describe("getProductById", () => {
-    it("should return a product by ID", async () => {
-      const product = { id: "1", name: "Product A" };
-      mockReq.params = { id: "1" };
-      (Product.findById as jest.Mock).mockResolvedValue(product);
-
-      await getProductById(mockReq as Request, mockRes as Response);
-
-      expect(Product.findById).toHaveBeenCalledWith("1");
-      expect(logger.log).toHaveBeenCalledWith("Fetching product by ID: 1");
-      expect(logger.log).toHaveBeenCalledWith("Fetched product with ID: 1");
-      expect(statusMock).toHaveBeenCalledWith(200);
-      expect(jsonMock).toHaveBeenCalledWith({ success: true, data: product });
-    });
-
-    it("should handle product not found", async () => {
-      mockReq.params = { id: "1" };
-      (Product.findById as jest.Mock).mockResolvedValue(null);
-
-      await getProductById(mockReq as Request, mockRes as Response);
-
-      expect(logger.error).toHaveBeenCalledWith("Product with ID 1 not found");
-      expect(statusMock).toHaveBeenCalledWith(404);
-      expect(jsonMock).toHaveBeenCalledWith({
-        success: false,
-        message: "Product not found",
-      });
-    });
-  });
-
-  describe("createProduct", () => {
-    it("should create a product", async () => {
-      const productInput = {
-        name: "Corn starch",
-        price: 29.99,
-        description: "A product description",
-        category: "maize",
-        stock: 100,
-      };
-  
-      const savedProduct = {
-        ...productInput,
-        _id: "678aec42fda87f5e84ddccf8",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-  
-      // Mock Product.create to resolve with the savedProduct
-      (Product.create as jest.Mock).mockResolvedValue(savedProduct);
-  
-      mockReq.body = productInput;
-  
-      await createProduct(mockReq as Request, mockRes as Response);
-  
-      console.log("Product.create calls:", (Product.create as jest.Mock).mock.calls);
-  
-      expect(Product.create).toHaveBeenCalledWith(productInput);
-      expect(logger.log).toHaveBeenCalledWith("Creating a new product");
-      expect(logger.log).toHaveBeenCalledWith("Created new product with ID: 678aec42fda87f5e84ddccf8");
-      expect(statusMock).toHaveBeenCalledWith(201);
-      expect(jsonMock).toHaveBeenCalledWith({
-        success: true,
-        data: savedProduct,
-      });
-    });
-  
-    it("should handle errors", async () => {
-      mockReq.body = { name: "Product A" };
-  
-      // Mock Product.create to reject with an error
-      (Product.create as jest.Mock).mockRejectedValue(new Error("Error creating product"));
-  
-      await createProduct(mockReq as Request, mockRes as Response);
-  
-      expect(logger.error).toHaveBeenCalledWith("Failed to create a product");
-      expect(statusMock).toHaveBeenCalledWith(500);
-      expect(jsonMock).toHaveBeenCalledWith({
-        success: false,
-        message: "Failed to create a product",
-      });
-    });
-  });
-  
-
-  describe("updateProduct", () => {
-    it("should update a product by ID", async () => {
-      const updatedProductInput = {
-        name: "Updated Product",
+describe('Product Controller', () => {
+  describe('GET /api/products', () => {
+    it('should return all products', async () => {
+      await Product.create({
+        name: 'Test Product',
         price: 100,
-        description: "Updated Description",
-        category: "Category A",
+        description: 'Test product description',
+        category: 'Test category',
         stock: 10,
-      };
-
-      const updatedProduct = { ...updatedProductInput, _id: "1" }; // Mock returned document
-
-      mockReq.params = { id: "1" };
-      mockReq.body = updatedProductInput;
-
-      (Product.findByIdAndUpdate as jest.Mock).mockResolvedValue(updatedProduct);
-
-      await updateProduct(mockReq as Request, mockRes as Response);
-
-      expect(Product.findByIdAndUpdate).toHaveBeenCalledWith(
-        "1",
-        updatedProductInput,
-        { new: true, runValidators: true }
-      );
-      expect(logger.log).toHaveBeenCalledWith("Updating product with ID: 1");
-      expect(logger.log).toHaveBeenCalledWith("Updated product with ID: 1");
-      expect(statusMock).toHaveBeenCalledWith(200);
-      expect(jsonMock).toHaveBeenCalledWith({
-        success: true,
-        data: { ...updatedProductInput, id: "1" }, // API response with `id` instead of `_id`
       });
-    });
 
-    it("should handle product not found", async () => {
-      mockReq.params = { id: "1" };
-      (Product.findByIdAndUpdate as jest.Mock).mockResolvedValue(null);
+      const response = await request(app)
+        .get('/api/products')
+        .set('Authorization', `Bearer ${authToken}`);
 
-      await updateProduct(mockReq as Request, mockRes as Response);
-
-      expect(logger.error).toHaveBeenCalledWith("Product with ID 1 not found");
-      expect(statusMock).toHaveBeenCalledWith(404);
-      expect(jsonMock).toHaveBeenCalledWith({
-        success: false,
-        message: "Product not found",
-      });
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
     });
   });
 
-  describe("deleteProduct", () => {
-    it("should delete a product by ID", async () => {
-      const product = { id: "1", name: "Product A" };
-      mockReq.params = { id: "1" };
-      (Product.findByIdAndDelete as jest.Mock).mockResolvedValue(product);
-
-      await deleteProduct(mockReq as Request, mockRes as Response);
-
-      expect(Product.findByIdAndDelete).toHaveBeenCalledWith("1");
-      expect(logger.log).toHaveBeenCalledWith("Deleting product with ID: 1");
-      expect(logger.log).toHaveBeenCalledWith("Deleted product with ID: 1");
-      expect(statusMock).toHaveBeenCalledWith(200);
-      expect(jsonMock).toHaveBeenCalledWith({
-        success: true,
-        message: "Product deleted successfully",
+  describe('GET /api/products/:id', () => {
+    it('should return a product by ID', async () => {
+      const newProduct = await Product.create({
+        name: 'Test Product',
+        price: 100,
+        description: 'Test description',
+        category: 'Test category',
+        stock: 10,
       });
+
+      const response = await request(app)
+        .get(`/api/products/${newProduct._id}`)
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data._id).toBe(newProduct.id);
     });
 
-    it("should handle product not found", async () => {
-      mockReq.params = { id: "1" };
-      (Product.findByIdAndDelete as jest.Mock).mockResolvedValue(null);
+    it('should return 404 if product not found', async () => {
+      const invalidId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .get(`/api/products/${invalidId}`)
+        .set('Authorization', `Bearer ${authToken}`);
 
-      await deleteProduct(mockReq as Request, mockRes as Response);
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Product not found');
+    });
+  });
 
-      expect(logger.error).toHaveBeenCalledWith("Product with ID 1 not found");
-      expect(statusMock).toHaveBeenCalledWith(404);
-      expect(jsonMock).toHaveBeenCalledWith({
-        success: false,
-        message: "Product not found",
+  describe('POST /api/products', () => {
+    it('should create a new product', async () => {
+      const productData = {
+        name: 'New Product',
+        price: 50,
+        description: 'A new product',
+        category: 'Category',
+        stock: 20,
+      };
+
+      const response = await request(app)
+        .post('/api/products')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(productData);
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.name).toBe(productData.name);
+    });
+
+    it('should return 400 for invalid product data', async () => {
+      const response = await request(app)
+        .post('/api/products')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ price: 50 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Invalid product data');
+    });
+  });
+
+  describe('PUT /api/products/:id', () => {
+    it('should update a product by ID', async () => {
+      const newProduct = await Product.create({
+        name: 'Old Product',
+        price: 80,
+        description: 'Old description',
+        category: 'Old category',
+        stock: 15,
       });
+
+      const updatedData = {
+        name: 'Updated Product',
+        price: 120,
+      };
+
+      const response = await request(app)
+        .put(`/api/products/${newProduct._id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updatedData);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.name).toBe(updatedData.name);
+      expect(response.body.data.price).toBe(updatedData.price);
+    });
+
+    it('should return 404 for a non-existent product ID', async () => {
+      const invalidId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .put(`/api/products/${invalidId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ name: 'Updated Product' });
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Product not found');
+    });
+  });
+
+  describe('DELETE /api/products/:id', () => {
+    it('should delete a product by ID', async () => {
+      const newProduct = await Product.create({
+        name: 'Test Product',
+        price: 100,
+        description: 'Description',
+        category: 'Category',
+        stock: 10,
+      });
+
+      const response = await request(app)
+        .delete(`/api/products/${newProduct._id}`)
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Product deleted successfully');
+
+      const productInDb = await Product.findById(newProduct._id);
+      expect(productInDb).toBeNull();
+    });
+
+    it('should return 404 if product does not exist', async () => {
+      const invalidId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .delete(`/api/products/${invalidId}`)
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Product not found');
     });
   });
 });

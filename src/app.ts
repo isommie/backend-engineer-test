@@ -24,7 +24,7 @@ connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/products', authenticateToken, productRoutes); // Protected product routes
+app.use('/api/products', authenticateToken('access'), productRoutes); // Protected product routes
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

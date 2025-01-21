@@ -59,17 +59,31 @@ export const createProduct = async (req: Request, res: Response): Promise<Respon
     logger.log(`Creating a new product`);
     // Extract product details from the request body
     const { name, price, description, category, stock } = req.body;
+
+    // Ensure required fields are present
+    if (!name || !price) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid product data',
+      });
+    }
+
     // Create a new product instance
     const product = new Product({ name, price, description, category, stock });
+
     // Save the new product to the database
     await product.save();
+
     // Log a message indicating the completion of the operation
     logger.log(`Created new product with ID: ${product.id}`);
+
     // Return a success response with the created product
     return res.status(201).json({ success: true, data: product });
+
   } catch (error) {
     // Log an error message indicating the failed operation
     logger.error('Failed to create a product');
+    
     // Return an error response with a 500 status code
     return res.status(500).json({ success: false, message: 'Failed to create a product' });
   }

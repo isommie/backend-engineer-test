@@ -26,7 +26,13 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
     await user.save();
 
     // Return a success response with the new user's data
-    return res.status(201).json({ success: true, data: user });
+    return res.status(201).json({
+      success: true,
+      data: {
+        email: user.email, 
+        username: user.username 
+      }
+    });
   } catch (error) {
     // Log the error for debugging
     console.error(error);
@@ -75,17 +81,23 @@ export const loginUser = async (req: Request, res: Response): Promise<Response> 
  */
 export const getUserDetails = async (req: Request, res: Response): Promise<Response> => {
   try {
+    // Check if req.user is populated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    
     // Find the user with the ID from the JWT
-    const user = await User.findById(req.user?.id).select('-password');
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) {
       // Return an error if the user does not exist
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
     // Return the user's details with the password omitted
     return res.status(200).json({ success: true, data: user });
   } catch (error) {
     // Log the error for debugging
-    console.error(error);
+    console.error('Error fetching user details:', error);
     // Return an error response with a 500 status code
     return res.status(500).json({ success: false, message: 'Failed to get user details' });
   }
@@ -124,6 +136,10 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
  */
 export const deleteUser = async (req: Request, res: Response): Promise<Response> => {
   try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    
     // Delete the user with the ID from the JWT
     const user = await User.findByIdAndDelete(req.user?.id);
     if (!user) {
@@ -144,7 +160,7 @@ export const logoutUser = async (req: Request, res: Response) => {
   try {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) {
-      return res.status(400).json({ success: false, message: 'Token not provided' });
+      return res.status(401).json({ success: false, message: 'Token not provided' });
     }
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);

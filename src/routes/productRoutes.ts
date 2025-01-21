@@ -15,7 +15,7 @@ const router = Router();
  * Protected
  * Description: Create a new product
  */
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken('access'), (req, res) => {
     createProduct(req, res);
 });
 
@@ -42,7 +42,7 @@ router.get('/:id', (req, res) => {
  * Protected
  * Description: Update a product by its ID
  */
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken('access'), (req, res) => {
     updateProduct(req, res);
 });
 
@@ -51,7 +51,7 @@ router.put('/:id', authenticateToken, (req, res) => {
  * Protected
  * Description: Delete a product by its ID
  */
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken('access'), (req, res) => {
     deleteProduct(req, res);
 });
 

@@ -34,7 +34,7 @@ router.post('/login', (req, res, next) => {
  * Protected
  * Description: Get authenticated user's details
  */
-router.get('/me', authenticateToken, (req, res, next) => {
+router.get('/me', authenticateToken('access'), (req, res, next) => {
     getUserDetails(req, res);
 });
 
@@ -43,7 +43,7 @@ router.get('/me', authenticateToken, (req, res, next) => {
  * Protected
  * Description: Update the authenticated user's details
  */
-router.put('/update', authenticateToken, (req, res, next) => {
+router.put('/update', authenticateToken('access'), (req, res, next) => {
     updateUser(req, res);
 });
 
@@ -52,7 +52,7 @@ router.put('/update', authenticateToken, (req, res, next) => {
  * Protected
  * Description: Delete the authenticated user's account
  */
-router.delete('/delete/:id', authenticateToken, (req, res, next) => {
+router.delete('/delete', authenticateToken('access'), (req, res, next) => {
     deleteUser(req, res);
 });
 

@@ -14,4 +14,5 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1', // Map @ to the src folder for cleaner imports
   },
   clearMocks: true, // Automatically clear mock calls and instances between tests
+  testTimeout: 30000, // Set default timeout to 30 seconds
 };

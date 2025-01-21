@@ -9,13 +9,19 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_key';
 
+interface IUser {
+  id: string;
+  email: string;
+}
+
+
 /**
  * Middleware function to authenticate JSON Web Tokens (JWT)
  * This function checks if the incoming request has a valid JWT token.
  * If the token is valid, it attaches the decoded user information to the request object.
  * If the token is invalid or not present, it sends a corresponding error response.
  */
-export const authenticateToken = async (
+export const authenticateToken = (tokenType: 'access' | 'refresh') => async (
     req: Request,
     res: Response,
     next: NextFunction
@@ -25,7 +31,7 @@ export const authenticateToken = async (
 
   // Check if the token is provided; if not, return a 401 Unauthorized response
   if (!token) {
-    res.status(401).json({ message: 'Access denied. No token provided.' });
+    res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
     return; // Ensure the function exits to prevent further processing
   }
 
@@ -33,7 +39,7 @@ export const authenticateToken = async (
     // Check if the token exists in the blacklist
     const blacklistedToken = await Token.findOne({ token });
     if (blacklistedToken) {
-      res.status(403).json({ message: 'Token is revoked.' });
+      res.status(403).json({ success: false, message: 'Token is revoked.' });
       return; // Exit after sending the response
     }
 
@@ -41,12 +47,12 @@ export const authenticateToken = async (
     const decoded = jwt.verify(token, JWT_SECRET);
 
     // Attach the decoded user data to the request object for use in downstream middleware or routes
-    req.user = decoded as any; 
+    req.user = decoded as IUser;
 
     // Proceed to the next middleware function in the stack
     next();
   } catch (error) {
     // If token verification fails (due to being invalid or expired), send a 403 Forbidden response
-    res.status(403).json({ message: 'Invalid or expired token.' });
+    res.status(403).json({ success: false, message: 'Invalid or expired token.' });
   }
 };
