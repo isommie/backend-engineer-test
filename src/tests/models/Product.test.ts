@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Product } from "../../src/models/Product";
+import { Product } from "../../models/Product";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import ValidationError from 'mongoose';
 

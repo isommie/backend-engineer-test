@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import connectDB from "../../src/config/database";
+import connectDB from "../../config/database";
 
 jest.mock("mongoose", () => ({
   connect: jest.fn(),

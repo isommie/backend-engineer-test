@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { Token, IToken } from "../../src/models/Token";
+import { Token, IToken } from "../../models/Token";
 
 describe("Token Model", () => {
   let mongoServer: MongoMemoryServer;

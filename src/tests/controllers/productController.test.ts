@@ -1,10 +1,10 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import app from '../../src/app';
-import { Product } from '../../src/models/Product';
-import { User } from '../../src/models/User';
-import { hashHelper } from '../../src/utils/hashHelper';
+import app from '../../app';
+import { Product } from '../../models/Product';
+import { User } from '../../models/User';
+import { hashHelper } from '../../utils/hashHelper';
 
 let mongoServer: MongoMemoryServer;
 let authToken: string;

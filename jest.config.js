@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest', // Use ts-jest to handle TypeScript files
   testEnvironment: 'node', // Specify the test environment
-  roots: ['<rootDir>/src', '<rootDir>/tests'], // Define the root folders for tests
+  roots: ['<rootDir>/src'], // Define the root folders for tests
   testMatch: [
     '**/tests/**/*.test.ts', // Match test files in the tests folder
     '**/?(*.)+(spec|test).ts', // Match spec or test files in any folder

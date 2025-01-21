@@ -1,9 +1,9 @@
   import request from 'supertest';
   import mongoose from 'mongoose';
   import { MongoMemoryServer } from 'mongodb-memory-server';
-  import app from '../../src/app';
-  import { User } from '../../src/models/User';
-  import { hashHelper } from '../../src/utils/hashHelper';
+  import app from '../../app';
+  import { User } from '../../models/User';
+  import { hashHelper } from '../../utils/hashHelper';
 
   let mongoServer: MongoMemoryServer;
 

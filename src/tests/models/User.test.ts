@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { User, IUser } from "../../src/models/User";
+import { User, IUser } from "../../models/User";
 
 describe("User Model", () => {
   let mongoServer: MongoMemoryServer;
