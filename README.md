@@ -62,6 +62,8 @@ The primary goal of this project is to demonstrate the ability to:
    MONGO_URI=your_mongodb_connection_string
    JWT_SECRET=your_jwt_secret_key
    PORT=5000
+   NODE_ENV=development
+   MONGO_INITDB_DATABASE=store_management_db
    ```
 
 4. **Run the application**:
