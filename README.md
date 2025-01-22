@@ -47,7 +47,7 @@ The primary goal of this project is to demonstrate the ability to:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-repo/backend-engineer-test.git
+   git clone https://github.com/isommie/backend-engineer-test.git
    cd backend-engineer-test
    ```
 
